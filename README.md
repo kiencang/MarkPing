@@ -7,7 +7,7 @@ Tình trạng:
 
 MarkPing ra đời vì thế! Nó làm sạch HTML, chỉ giữ lại nội dung chính. Đối với EPUB, nó giữ nguyên nội dung và chuyển thành định dạng markdown để bạn có thể tiện hỏi AI nội dung của EPUB mà không thể up trực tiếp lên.
 
-Với ai có nhu cầu dịch Anh - Việt trực tiếp từ không chat từ tài liệu markdown, có thể tham khảo repo này (chỉ bao gồm một vài chỉ thị để hướng dẫn AI dịch): https://github.com/kiencang/MarkdownBox
+Với ai có nhu cầu dịch Anh - Việt trực tiếp từ khung chat bằng tài liệu markdown, có thể tham khảo repo này (chỉ bao gồm một vài chỉ thị để hướng dẫn AI dịch): https://github.com/kiencang/MarkdownBox
 
 ## Tuyên bố từ chối trách nhiệm
 Công cụ này có thể được sử dụng cho mục đích nghiên cứu và học tập cá nhân.
