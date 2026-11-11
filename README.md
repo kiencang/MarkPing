@@ -19,4 +19,4 @@ Một số thư viện quan trọng mà ứng dụng này dùng:
 *   **[Angular](https://angular.dev/)**: Lõi chính của ứng dụng.
 *   **[Tailwind CSS](https://tailwindcss.com/)**: Xây dựng giao diện chính cho ứng dụng.
 *   **[Mozilla Readability](https://github.com/mozilla/readability)**: Thư viện bóc tách nội dung chính của một bài báo/trang web (loại bỏ quảng cáo, menu, header...).
-*   **[Turndown](https://github.com/mixmark-io/turndown)**: Chuyển đổi nđịnh dạng HTML thành cú pháp Markdown.
+*   **[Turndown](https://github.com/mixmark-io/turndown)**: Chuyển đổi định dạng HTML thành cú pháp Markdown.
