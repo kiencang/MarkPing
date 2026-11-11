@@ -1,0 +1,6 @@
+{
+  "name": "MarkPing — HTML to Clean Markdown Converter",
+  "description": "Trình chuyển đổi HTML sang Markdown sạch hoạt động 100% phía client với Mozilla Readability và Turndown.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

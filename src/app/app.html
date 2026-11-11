@@ -1,0 +1,529 @@
+<div class="min-h-screen md:h-screen md:overflow-hidden flex flex-col bg-slate-50 text-slate-900">
+  <!-- Hidden native file input for local HTML or EPUB file selection -->
+  <input
+    #fileInput
+    type="file"
+    accept=".html,.htm,.xhtml,.epub,text/html,text/plain,application/epub+zip"
+    class="sr-only"
+    aria-label="Chọn tệp HTML hoặc EPUB từ máy tính"
+    (change)="onFileSelected($event)"
+  />
+
+  <!-- Top Header (Minimalist: Logo + Gear Settings icon on Left, Filename Input on Right) -->
+  <header class="bg-white border-b border-slate-200 px-5 h-14 shrink-0 flex items-center justify-between gap-4">
+    <!-- Left: Brand + Gear Icon -->
+    <div class="flex items-center gap-1.5">
+      <button
+        type="button"
+        (click)="clearAll()"
+        title="Làm mới trang"
+        class="text-base font-bold tracking-tight text-slate-900 hover:text-slate-600 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+      >
+        MarkPing
+      </button>
+
+      <button
+        type="button"
+        (click)="openSettings()"
+        title="Cài đặt chuyển đổi"
+        aria-label="Cài đặt chuyển đổi"
+        [attr.aria-expanded]="isSettingsOpen()"
+        class="w-8 h-8 inline-flex items-center justify-center rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+      >
+        <span class="material-icons-outlined text-[18px] leading-none" aria-hidden="true">settings</span>
+      </button>
+    </div>
+
+    <!-- Right: Editable output filename -->
+    <div class="flex items-center gap-2 shrink-0">
+      <label for="filename-input" class="text-xs text-slate-500 whitespace-nowrap shrink-0">
+        Tên tệp lưu:
+      </label>
+      <input
+        id="filename-input"
+        type="text"
+        [ngModel]="customFilename() || effectiveFilename()"
+        (ngModelChange)="updateCustomFilename($event)"
+        placeholder="ten-bai-viet.md"
+        aria-label="Tên tệp Markdown khi tải về"
+        class="w-48 sm:w-64 px-2.5 py-1 text-xs font-mono bg-slate-50 border border-slate-200 rounded-md text-slate-800 focus:outline-none focus:border-slate-900 transition-colors"
+      />
+    </div>
+  </header>
+
+  <!-- Minimalist Settings Modal -->
+  @if (isSettingsOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <!-- Accessible Backdrop Button -->
+      <button
+        type="button"
+        aria-label="Đóng hộp thoại cài đặt"
+        (click)="closeSettings()"
+        class="fixed inset-0 w-full h-full bg-slate-900/30 backdrop-blur-[1px] cursor-default"
+      ></button>
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-modal-title"
+        class="relative z-10 w-full max-w-[540px] bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden"
+      >
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 id="settings-modal-title" class="text-sm font-semibold text-slate-900">
+            Cài đặt chuyển đổi
+          </h2>
+          <button
+            type="button"
+            (click)="closeSettings()"
+            aria-label="Đóng cài đặt"
+            class="w-7 h-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <span class="material-icons-outlined text-[18px] leading-none" aria-hidden="true">close</span>
+          </button>
+        </div>
+
+        <!-- Modal Body: Symmetric Minimalist Rows -->
+        <div class="divide-y divide-slate-100 px-6">
+          <!-- Row 1: YAML Frontmatter -->
+          <div class="py-3.5 flex items-center justify-between gap-6">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-slate-900">YAML Frontmatter</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                Đính kèm tiêu đề, tác giả và nguồn ở đầu tệp .md
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="YAML Frontmatter"
+              [attr.aria-checked]="options().includeFrontmatter"
+              (click)="toggleFrontmatter()"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              [class.bg-slate-900]="options().includeFrontmatter"
+              [class.text-white]="options().includeFrontmatter"
+              [class.border-slate-900]="options().includeFrontmatter"
+              [class.bg-slate-100]="!options().includeFrontmatter"
+              [class.text-slate-700]="!options().includeFrontmatter"
+              [class.border-slate-200]="!options().includeFrontmatter"
+            >
+              <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">
+                {{ options().includeFrontmatter ? 'check_box' : 'check_box_outline_blank' }}
+              </span>
+              <span>{{ options().includeFrontmatter ? 'Đang bật' : 'Đang tắt' }}</span>
+            </button>
+          </div>
+
+          <!-- Row 2: Bảng biểu & Cú pháp GFM -->
+          <div class="py-3.5 flex items-center justify-between gap-6">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-slate-900">Bảng biểu &amp; Cú pháp GFM</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                Hỗ trợ bảng (&lt;table&gt;), ô kiểm ([x]) và chữ gạch ngang (~~)
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Bảng biểu & Cú pháp GFM"
+              [attr.aria-checked]="options().enableGfm"
+              (click)="toggleGfm()"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              [class.bg-slate-900]="options().enableGfm"
+              [class.text-white]="options().enableGfm"
+              [class.border-slate-900]="options().enableGfm"
+              [class.bg-slate-100]="!options().enableGfm"
+              [class.text-slate-700]="!options().enableGfm"
+              [class.border-slate-200]="!options().enableGfm"
+            >
+              <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">
+                {{ options().enableGfm ? 'check_box' : 'check_box_outline_blank' }}
+              </span>
+              <span>{{ options().enableGfm ? 'Đang bật' : 'Đang tắt' }}</span>
+            </button>
+          </div>
+
+          <!-- Row 3: Giữ thẻ ảnh -->
+          <div class="py-3.5 flex items-center justify-between gap-6">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-slate-900">Giữ thẻ ảnh</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                Chuyển ảnh sang ![alt](url), tự động lược bỏ chuỗi Base64
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Giữ thẻ ảnh"
+              [attr.aria-checked]="options().keepImages"
+              (click)="toggleKeepImages()"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              [class.bg-slate-900]="options().keepImages"
+              [class.text-white]="options().keepImages"
+              [class.border-slate-900]="options().keepImages"
+              [class.bg-slate-100]="!options().keepImages"
+              [class.text-slate-700]="!options().keepImages"
+              [class.border-slate-200]="!options().keepImages"
+            >
+              <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">
+                {{ options().keepImages ? 'check_box' : 'check_box_outline_blank' }}
+              </span>
+              <span>{{ options().keepImages ? 'Đang bật' : 'Đang tắt' }}</span>
+            </button>
+          </div>
+
+          <!-- Row 4: Kiểu tiêu đề -->
+          <div class="py-3.5 flex items-center justify-between gap-6">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-slate-900">Kiểu tiêu đề</p>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                Định dạng thẻ tiêu đề H1–H6 trong Markdown
+              </p>
+            </div>
+            <div class="inline-flex items-center p-0.5 bg-slate-100 border border-slate-200 rounded-md shrink-0">
+              <button
+                type="button"
+                (click)="setHeadingStyle('atx')"
+                class="px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                [class.bg-white]="options().headingStyle === 'atx'"
+                [class.text-slate-900]="options().headingStyle === 'atx'"
+                [class.shadow-xs]="options().headingStyle === 'atx'"
+                [class.text-slate-600]="options().headingStyle !== 'atx'"
+              >
+                # ATX
+              </button>
+              <button
+                type="button"
+                (click)="setHeadingStyle('setext')"
+                class="px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                [class.bg-white]="options().headingStyle === 'setext'"
+                [class.text-slate-900]="options().headingStyle === 'setext'"
+                [class.shadow-xs]="options().headingStyle === 'setext'"
+                [class.text-slate-600]="options().headingStyle !== 'setext'"
+              >
+                Setext
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="bg-slate-50 border-t border-slate-200">
+          <!-- Action Buttons Row -->
+          <div class="px-6 py-3.5 flex items-center justify-between gap-4">
+            <button
+              type="button"
+              (click)="resetDefaultOptions()"
+              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+            >
+              <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">restart_alt</span>
+              <span>Khôi phục mặc định</span>
+            </button>
+
+            <button
+              type="button"
+              (click)="closeSettings()"
+              class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">check</span>
+              <span>Xong</span>
+            </button>
+          </div>
+
+          <!-- Subtle Divider + Version & Author Info -->
+          <div class="px-6 py-2.5 border-t border-slate-200/80 text-center">
+            <p class="text-[11px] font-mono text-slate-400">
+              v1.0.0 -
+              <a
+                href="https://github.com/kiencang/MarkPing"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-slate-500 hover:text-slate-900 underline underline-offset-2 transition-colors"
+              >GitHub</a>
+              - Nguyễn Đức Anh
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Mobile Pane Switcher (Only visible below md: 768px) -->
+  <div class="flex md:hidden border-b border-slate-200 bg-white px-4 py-2 gap-2 shrink-0">
+    <button
+      type="button"
+      (click)="mobilePane.set('input')"
+      class="flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap cursor-pointer"
+      [class.bg-slate-900]="mobilePane() === 'input'"
+      [class.text-white]="mobilePane() === 'input'"
+      [class.bg-slate-100]="mobilePane() !== 'input'"
+      [class.text-slate-700]="mobilePane() !== 'input'"
+    >
+      1. Nguồn HTML / EPUB ({{ conversion().stats.inputCharCount | number }} ký tự)
+    </button>
+    <button
+      type="button"
+      (click)="mobilePane.set('output')"
+      class="flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap cursor-pointer"
+      [class.bg-slate-900]="mobilePane() === 'output'"
+      [class.text-white]="mobilePane() === 'output'"
+      [class.bg-slate-100]="mobilePane() !== 'output'"
+      [class.text-slate-700]="mobilePane() !== 'output'"
+    >
+      2. Kết quả Markdown ({{ conversion().stats.wordCount | number }} từ)
+    </button>
+  </div>
+
+  <!-- Main 2-Column Split Workspace (Desktop & Tablet md:grid-cols-2 with 100% locked horizontal alignment) -->
+  <main class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 items-stretch divide-y md:divide-y-0 md:divide-x divide-slate-200">
+    <!-- LEFT COLUMN: HTML / EPUB Source Input -->
+    <section
+      aria-label="Nguồn dữ liệu đầu vào"
+      class="flex flex-col bg-white min-h-[520px] md:min-h-0 md:h-full overflow-hidden"
+      [class.hidden]="mobilePane() === 'output'"
+      [class.md:flex]="true"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <!-- Row 1: Pane Toolbar (Locked h-12 to align strictly with Right Column Toolbar) -->
+      <div class="h-12 px-5 flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50/70 shrink-0">
+        <div class="flex items-center min-w-0">
+          @if (uploadedFilename() || rawHtml().trim()) {
+            <h2 class="text-xs font-semibold text-slate-800 whitespace-nowrap shrink-0">
+              @if (sourceMode() === 'epub') {
+                Nội dung sách EPUB
+              } @else {
+                Mã nguồn HTML
+              }
+            </h2>
+          }
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            (click)="triggerFileSelect()"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">upload_file</span>
+            <span>Chọn file .html / .epub</span>
+          </button>
+
+          <button
+            type="button"
+            (click)="clearAll()"
+            [disabled]="!rawHtml() && !parseError()"
+            class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:pointer-events-none transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">delete_outline</span>
+            <span>Xóa</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 2: Editor & Drag-and-Drop Body (Locked flex-1 min-h-0) -->
+      <div class="relative flex-1 min-h-0 flex flex-col">
+        @if (isDraggingOver()) {
+          <div class="absolute inset-3 z-20 rounded-lg border-2 border-dashed border-slate-900 bg-slate-900/5 flex flex-col items-center justify-center p-6 text-center pointer-events-none">
+            <span class="material-icons-outlined text-3xl text-slate-900 mb-2" aria-hidden="true">file_upload</span>
+            <p class="text-sm font-semibold text-slate-900">Thả tệp .html hoặc .epub vào đây để chuyển đổi ngay</p>
+            <p class="text-xs text-slate-600 mt-1">Xử lý hoàn toàn cục bộ trên trình duyệt của bạn</p>
+          </div>
+        }
+
+        <textarea
+          id="html-source-textarea"
+          aria-label="Nội dung mã nguồn HTML hoặc EPUB"
+          [ngModel]="rawHtml()"
+          (ngModelChange)="updateHtmlInput($event)"
+          placeholder="Dán mã nguồn HTML vào đây hoặc kéo thả tệp .html / .epub từ máy tính..."
+          spellcheck="false"
+          class="flex-1 min-h-0 w-full p-5 font-mono text-xs leading-relaxed text-slate-800 bg-white resize-none focus:outline-none"
+        ></textarea>
+      </div>
+
+      <!-- Row 3: IDE Bottom Status Bar (Locked h-9 to align strictly with Right Column Status Bar) -->
+      <footer
+        aria-label="Thông số nguồn đầu vào"
+        class="h-9 px-5 border-t border-slate-200 bg-slate-100/80 flex items-center justify-between gap-4 text-[11px] font-mono text-slate-600 tabular-nums shrink-0"
+      >
+        <div class="flex items-center gap-1.5 min-w-0 truncate">
+          @if (uploadedFilename()) {
+            <span class="font-medium text-slate-800 truncate" [title]="uploadedFilename()!">
+              {{ uploadedFilename() }}
+            </span>
+            @if (uploadedFileSize() !== null) {
+              <span class="text-slate-400" aria-hidden="true">·</span>
+              <span class="shrink-0">{{ formatBytes(uploadedFileSize()!) }}</span>
+            }
+            @if (epubChapterCount()) {
+              <span class="text-slate-400" aria-hidden="true">·</span>
+              <span class="text-slate-800 font-medium shrink-0">{{ epubChapterCount() }} chương</span>
+            }
+          } @else if (rawHtml().trim()) {
+            <span class="text-slate-700">Dữ liệu nhập trực tiếp</span>
+          } @else {
+            <span class="text-slate-400">Chưa có tệp tải lên</span>
+          }
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+          <span>{{ conversion().stats.inputCharCount | number }} ký tự</span>
+          <span class="text-slate-400" aria-hidden="true">·</span>
+          <span>{{ inputLineCount() | number }} dòng</span>
+        </div>
+      </footer>
+    </section>
+
+    <!-- RIGHT COLUMN: Extracted Clean Markdown & Reader Preview -->
+    <section
+      aria-label="Kết quả Markdown sạch"
+      class="flex flex-col bg-white min-h-[520px] md:min-h-0 md:h-full overflow-hidden"
+      [class.hidden]="mobilePane() === 'input'"
+      [class.md:flex]="true"
+    >
+      <!-- Row 1: Pane Toolbar (Locked h-12 to align strictly with Left Column Toolbar) -->
+      <div class="h-12 px-5 flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50/70 shrink-0">
+        <!-- Segmented View Switcher -->
+        <div class="inline-flex items-center p-0.5 bg-slate-200/70 rounded-md shrink-0" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="outputTab() === 'markdown'"
+            (click)="outputTab.set('markdown')"
+            class="px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            [class.bg-white]="outputTab() === 'markdown'"
+            [class.text-slate-900]="outputTab() === 'markdown'"
+            [class.shadow-xs]="outputTab() === 'markdown'"
+            [class.text-slate-600]="outputTab() !== 'markdown'"
+          >
+            Mã Markdown
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="outputTab() === 'preview'"
+            (click)="outputTab.set('preview')"
+            class="px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            [class.bg-white]="outputTab() === 'preview'"
+            [class.text-slate-900]="outputTab() === 'preview'"
+            [class.shadow-xs]="outputTab() === 'preview'"
+            [class.text-slate-600]="outputTab() !== 'preview'"
+          >
+            Xem trước nội dung sạch
+          </button>
+        </div>
+
+        <!-- Copy & Download Actions -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            (click)="copyMarkdown()"
+            [disabled]="conversion().isEmpty"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">
+              {{ copyFeedback() ? 'check' : 'content_copy' }}
+            </span>
+            <span>{{ copyFeedback() ? 'Đã sao chép!' : 'Sao chép' }}</span>
+          </button>
+
+          <button
+            type="button"
+            (click)="downloadMarkdownFile()"
+            [disabled]="conversion().isEmpty"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 rounded-md hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">file_download</span>
+            <span>Lưu .md</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 2: Output Body (Locked flex-1 min-h-0, starts at exact same Y coordinate as Left Column) -->
+      <div class="flex-1 min-h-0 flex flex-col overflow-y-auto">
+        @if (conversion().error) {
+          <div class="p-8 text-center">
+            <p class="text-sm font-semibold text-red-600">Lỗi phân tích dữ liệu</p>
+            <p class="text-xs text-slate-600 mt-1">{{ conversion().error }}</p>
+          </div>
+        } @else if (conversion().isEmpty) {
+          <div class="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500">
+            <span class="material-icons-outlined text-3xl text-slate-400 mb-2" aria-hidden="true">description</span>
+            <p class="text-sm font-medium text-slate-700">Nội dung Markdown sẽ hiển thị tại đây</p>
+            <p class="text-xs text-slate-500 mt-1 max-w-sm">
+              Hỗ trợ lọc bài viết chính từ trang HTML (qua Readability) hoặc chuyển đổi nguyên vẹn toàn bộ sách EPUB sang Markdown.
+            </p>
+          </div>
+        } @else if (outputTab() === 'markdown') {
+          <textarea
+            id="markdown-output-textarea"
+            aria-label="Kết quả Markdown đã trích xuất"
+            readonly
+            [value]="conversion().markdown"
+            spellcheck="false"
+            class="flex-1 min-h-0 w-full p-5 font-mono text-xs leading-relaxed text-slate-900 bg-white resize-none focus:outline-none"
+          ></textarea>
+        } @else {
+          <article class="p-6 sm:p-8 max-w-3xl">
+            @if (sourceMode() === 'html' && conversion().usedFallback) {
+              <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-4">
+                Đoạn HTML ngắn hoặc không có thẻ bài viết chuẩn: Đã áp dụng bộ lọc làm sạch trực tiếp.
+              </p>
+            }
+            <div class="reader-preview" [innerHTML]="safePreviewHtml()"></div>
+          </article>
+        }
+      </div>
+
+      <!-- Row 3: IDE Bottom Status Bar (Locked h-9 to align strictly with Left Column Status Bar) -->
+      <footer
+        aria-label="Thông số kết quả Markdown"
+        class="h-9 px-5 border-t border-slate-200 bg-slate-100/80 flex items-center justify-between gap-4 text-[11px] text-slate-600 shrink-0"
+      >
+        <div class="flex items-center gap-1.5 min-w-0 truncate">
+          @if (!conversion().isEmpty) {
+            <span class="font-semibold text-slate-800 truncate" [title]="conversion().metadata.title">
+              {{ conversion().metadata.title }}
+            </span>
+            @if (conversion().metadata.byline) {
+              <span class="text-slate-400 shrink-0" aria-hidden="true">·</span>
+              <span class="truncate max-w-[180px]" [title]="conversion().metadata.byline">
+                {{ conversion().metadata.byline }}
+              </span>
+            }
+            @if (conversion().metadata.siteName) {
+              <span class="text-slate-400 shrink-0" aria-hidden="true">·</span>
+              <span class="text-slate-500 truncate max-w-[150px]" [title]="conversion().metadata.siteName">
+                {{ conversion().metadata.siteName }}
+              </span>
+            }
+          } @else {
+            <span class="font-mono text-slate-400">Chưa có kết quả đầu ra</span>
+          }
+        </div>
+
+        <div class="flex items-center gap-1.5 font-mono tabular-nums shrink-0 whitespace-nowrap">
+          @if (conversion().chapterCount) {
+            <span class="text-slate-800 font-medium">{{ conversion().chapterCount }} chương</span>
+            <span class="text-slate-400" aria-hidden="true">·</span>
+          }
+          <span>{{ conversion().stats.wordCount | number }} từ</span>
+          <span class="text-slate-400" aria-hidden="true">·</span>
+          <span>{{ conversion().stats.charCount | number }} ký tự</span>
+          @if (!conversion().isEmpty) {
+            <span class="text-slate-400" aria-hidden="true">·</span>
+            <span>~{{ conversion().stats.readingTimeMinutes }} phút đọc</span>
+          }
+          @if (sourceMode() === 'html' && conversion().stats.reductionPercentage > 0) {
+            <span class="text-slate-400" aria-hidden="true">·</span>
+            <span class="text-emerald-700 font-medium">
+              -{{ conversion().stats.reductionPercentage }}% mã thừa
+            </span>
+          }
+        </div>
+      </footer>
+    </section>
+  </main>
+</div>
