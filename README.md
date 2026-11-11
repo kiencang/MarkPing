@@ -1,5 +1,7 @@
 # MarkPing
-Chuyển HTML, EPUB sang Markdown ngay thông qua trình duyệt.
+Chuyển HTML, EPUB sang Markdown tiện lợi: https://markping.nguyenducanh.workers.dev/
+
+Công dụng:
 - HTML chuyển thẳng lên AI sẽ rất tốn token vì HTML ngoài nội dung chính có rất nhiều nội dung phụ;
 - EPUB một số AI không cho tải trực tiếp lên;
 
