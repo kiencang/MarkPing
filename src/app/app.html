@@ -97,20 +97,20 @@
               type="button"
               role="switch"
               aria-label="YAML Frontmatter"
-              [attr.aria-checked]="options().includeFrontmatter"
+              [attr.aria-checked]="draftOptions().includeFrontmatter"
               (click)="toggleFrontmatter()"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              [class.bg-slate-900]="options().includeFrontmatter"
-              [class.text-white]="options().includeFrontmatter"
-              [class.border-slate-900]="options().includeFrontmatter"
-              [class.bg-slate-100]="!options().includeFrontmatter"
-              [class.text-slate-700]="!options().includeFrontmatter"
-              [class.border-slate-200]="!options().includeFrontmatter"
+              [class.bg-slate-900]="draftOptions().includeFrontmatter"
+              [class.text-white]="draftOptions().includeFrontmatter"
+              [class.border-slate-900]="draftOptions().includeFrontmatter"
+              [class.bg-slate-100]="!draftOptions().includeFrontmatter"
+              [class.text-slate-700]="!draftOptions().includeFrontmatter"
+              [class.border-slate-200]="!draftOptions().includeFrontmatter"
             >
               <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">
-                {{ options().includeFrontmatter ? 'check_box' : 'check_box_outline_blank' }}
+                {{ draftOptions().includeFrontmatter ? 'check_box' : 'check_box_outline_blank' }}
               </span>
-              <span>{{ options().includeFrontmatter ? 'Đang bật' : 'Đang tắt' }}</span>
+              <span>{{ draftOptions().includeFrontmatter ? 'Đang bật' : 'Đang tắt' }}</span>
             </button>
           </div>
 
@@ -126,20 +126,20 @@
               type="button"
               role="switch"
               aria-label="Bảng biểu & Cú pháp GFM"
-              [attr.aria-checked]="options().enableGfm"
+              [attr.aria-checked]="draftOptions().enableGfm"
               (click)="toggleGfm()"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              [class.bg-slate-900]="options().enableGfm"
-              [class.text-white]="options().enableGfm"
-              [class.border-slate-900]="options().enableGfm"
-              [class.bg-slate-100]="!options().enableGfm"
-              [class.text-slate-700]="!options().enableGfm"
-              [class.border-slate-200]="!options().enableGfm"
+              [class.bg-slate-900]="draftOptions().enableGfm"
+              [class.text-white]="draftOptions().enableGfm"
+              [class.border-slate-900]="draftOptions().enableGfm"
+              [class.bg-slate-100]="!draftOptions().enableGfm"
+              [class.text-slate-700]="!draftOptions().enableGfm"
+              [class.border-slate-200]="!draftOptions().enableGfm"
             >
               <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">
-                {{ options().enableGfm ? 'check_box' : 'check_box_outline_blank' }}
+                {{ draftOptions().enableGfm ? 'check_box' : 'check_box_outline_blank' }}
               </span>
-              <span>{{ options().enableGfm ? 'Đang bật' : 'Đang tắt' }}</span>
+              <span>{{ draftOptions().enableGfm ? 'Đang bật' : 'Đang tắt' }}</span>
             </button>
           </div>
 
@@ -155,20 +155,20 @@
               type="button"
               role="switch"
               aria-label="Giữ thẻ ảnh"
-              [attr.aria-checked]="options().keepImages"
+              [attr.aria-checked]="draftOptions().keepImages"
               (click)="toggleKeepImages()"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              [class.bg-slate-900]="options().keepImages"
-              [class.text-white]="options().keepImages"
-              [class.border-slate-900]="options().keepImages"
-              [class.bg-slate-100]="!options().keepImages"
-              [class.text-slate-700]="!options().keepImages"
-              [class.border-slate-200]="!options().keepImages"
+              [class.bg-slate-900]="draftOptions().keepImages"
+              [class.text-white]="draftOptions().keepImages"
+              [class.border-slate-900]="draftOptions().keepImages"
+              [class.bg-slate-100]="!draftOptions().keepImages"
+              [class.text-slate-700]="!draftOptions().keepImages"
+              [class.border-slate-200]="!draftOptions().keepImages"
             >
               <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">
-                {{ options().keepImages ? 'check_box' : 'check_box_outline_blank' }}
+                {{ draftOptions().keepImages ? 'check_box' : 'check_box_outline_blank' }}
               </span>
-              <span>{{ options().keepImages ? 'Đang bật' : 'Đang tắt' }}</span>
+              <span>{{ draftOptions().keepImages ? 'Đang bật' : 'Đang tắt' }}</span>
             </button>
           </div>
 
@@ -185,10 +185,10 @@
                 type="button"
                 (click)="setHeadingStyle('atx')"
                 class="px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                [class.bg-white]="options().headingStyle === 'atx'"
-                [class.text-slate-900]="options().headingStyle === 'atx'"
-                [class.shadow-xs]="options().headingStyle === 'atx'"
-                [class.text-slate-600]="options().headingStyle !== 'atx'"
+                [class.bg-white]="draftOptions().headingStyle === 'atx'"
+                [class.text-slate-900]="draftOptions().headingStyle === 'atx'"
+                [class.shadow-xs]="draftOptions().headingStyle === 'atx'"
+                [class.text-slate-600]="draftOptions().headingStyle !== 'atx'"
               >
                 # ATX
               </button>
@@ -196,10 +196,10 @@
                 type="button"
                 (click)="setHeadingStyle('setext')"
                 class="px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                [class.bg-white]="options().headingStyle === 'setext'"
-                [class.text-slate-900]="options().headingStyle === 'setext'"
-                [class.shadow-xs]="options().headingStyle === 'setext'"
-                [class.text-slate-600]="options().headingStyle !== 'setext'"
+                [class.bg-white]="draftOptions().headingStyle === 'setext'"
+                [class.text-slate-900]="draftOptions().headingStyle === 'setext'"
+                [class.shadow-xs]="draftOptions().headingStyle === 'setext'"
+                [class.text-slate-600]="draftOptions().headingStyle !== 'setext'"
               >
                 Setext
               </button>
@@ -222,18 +222,18 @@
 
             <button
               type="button"
-              (click)="closeSettings()"
-              class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors cursor-pointer"
+              (click)="saveSettings()"
+              class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-slate-800 bg-slate-200 border border-slate-300 rounded-md hover:bg-slate-300 hover:text-slate-900 transition-colors cursor-pointer"
             >
               <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">check</span>
-              <span>Xong</span>
+              <span>Lưu</span>
             </button>
           </div>
 
           <!-- Subtle Divider + Version & Author Info -->
           <div class="px-6 py-2.5 border-t border-slate-200/80 text-center">
             <p class="text-[11px] font-mono text-slate-400">
-              v1.0.0 -
+              v1.0.1 -
               <a
                 href="https://github.com/kiencang/MarkPing"
                 target="_blank"
@@ -526,4 +526,26 @@
       </footer>
     </section>
   </main>
+
+  <!-- Bottom-Right Toast Notification -->
+  @if (toastMessage()) {
+    <div
+      role="status"
+      aria-live="polite"
+      class="fixed bottom-12 right-5 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-slate-900 text-white text-xs font-medium rounded-lg shadow-lg border border-slate-800 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
+    >
+      <span class="material-icons-outlined text-emerald-400 text-[18px] leading-none shrink-0" aria-hidden="true">
+        check_circle
+      </span>
+      <span>{{ toastMessage() }}</span>
+      <button
+        type="button"
+        (click)="dismissToast()"
+        aria-label="Đóng thông báo"
+        class="ml-2 w-5 h-5 inline-flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+      >
+        <span class="material-icons-outlined text-[15px] leading-none" aria-hidden="true">close</span>
+      </button>
+    </div>
+  }
 </div>

@@ -90,6 +90,7 @@ export class App {
   readonly customFilename = signal<string>('');
   readonly fileRandomSuffix = signal<string>(generateRandomFiveDigitSuffix());
   readonly options = signal<ConversionOptions>(loadSavedOptions());
+  readonly draftOptions = signal<ConversionOptions>(loadSavedOptions());
 
   // Source mode state ('html' uses Readability; 'epub' skips Readability to preserve full book content)
   readonly sourceMode = signal<'html' | 'epub'>('html');
@@ -103,6 +104,8 @@ export class App {
   readonly isDraggingOver = signal<boolean>(false);
   readonly copyFeedback = signal<boolean>(false);
   readonly isSettingsOpen = signal<boolean>(false);
+  readonly toastMessage = signal<string | null>(null);
+  private toastTimer?: ReturnType<typeof setTimeout>;
 
   // Input line count for IDE bottom status bar
   readonly inputLineCount = computed<number>(() => {
@@ -183,17 +186,42 @@ export class App {
   });
 
   openSettings(): void {
+    this.draftOptions.set({...this.options()});
     this.isSettingsOpen.set(true);
   }
 
   closeSettings(): void {
+    this.draftOptions.set({...this.options()});
     this.isSettingsOpen.set(false);
   }
 
+  saveSettings(): void {
+    const committed = {...this.draftOptions()};
+    this.options.set(committed);
+    saveOptionsToStorage(committed);
+    this.isSettingsOpen.set(false);
+    this.showToast('Cài đặt của bạn đã được lưu thành công!');
+  }
+
+  showToast(message: string): void {
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+    }
+    this.toastMessage.set(message);
+    this.toastTimer = setTimeout(() => {
+      this.toastMessage.set(null);
+    }, 3000);
+  }
+
+  dismissToast(): void {
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+    }
+    this.toastMessage.set(null);
+  }
+
   resetDefaultOptions(): void {
-    const defaults = {...DEFAULT_CONVERSION_OPTIONS};
-    this.options.set(defaults);
-    saveOptionsToStorage(defaults);
+    this.draftOptions.set({...DEFAULT_CONVERSION_OPTIONS});
   }
 
   updateHtmlInput(value: string): void {
@@ -213,47 +241,31 @@ export class App {
   }
 
   toggleFrontmatter(): void {
-    this.options.update((prev) => {
-      const next = {
-        ...prev,
-        includeFrontmatter: !prev.includeFrontmatter,
-      };
-      saveOptionsToStorage(next);
-      return next;
-    });
+    this.draftOptions.update((prev) => ({
+      ...prev,
+      includeFrontmatter: !prev.includeFrontmatter,
+    }));
   }
 
   toggleGfm(): void {
-    this.options.update((prev) => {
-      const next = {
-        ...prev,
-        enableGfm: !prev.enableGfm,
-      };
-      saveOptionsToStorage(next);
-      return next;
-    });
+    this.draftOptions.update((prev) => ({
+      ...prev,
+      enableGfm: !prev.enableGfm,
+    }));
   }
 
   toggleKeepImages(): void {
-    this.options.update((prev) => {
-      const next = {
-        ...prev,
-        keepImages: !prev.keepImages,
-      };
-      saveOptionsToStorage(next);
-      return next;
-    });
+    this.draftOptions.update((prev) => ({
+      ...prev,
+      keepImages: !prev.keepImages,
+    }));
   }
 
   setHeadingStyle(style: 'atx' | 'setext'): void {
-    this.options.update((prev) => {
-      const next = {
-        ...prev,
-        headingStyle: style,
-      };
-      saveOptionsToStorage(next);
-      return next;
-    });
+    this.draftOptions.update((prev) => ({
+      ...prev,
+      headingStyle: style,
+    }));
   }
 
   clearAll(): void {
