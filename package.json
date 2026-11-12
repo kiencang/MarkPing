@@ -1,6 +1,6 @@
 {
   "name": "markping",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -23,6 +23,7 @@
     "@mozilla/readability": "^0.6.0",
     "@types/turndown": "^5.0.6",
     "fflate": "^0.8.3",
+    "mathml-to-latex": "^1.8.0",
     "motion": "^12.23.24",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

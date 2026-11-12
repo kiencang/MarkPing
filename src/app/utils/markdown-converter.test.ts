@@ -7,6 +7,7 @@ import {
   DEFAULT_CONVERSION_OPTIONS,
   slugifyTitle,
   buildYamlFrontmatter,
+  isLikelyInlineLatex,
 } from './markdown-converter';
 import {convertEpubBufferToMarkdown, resolveEpubPath} from './epub-converter';
 
@@ -296,4 +297,110 @@ test('convertHtmlToCleanMarkdown replaces Base64 images with concise note and co
     true
   );
 });
+
+test('convertHtmlToCleanMarkdown converts MathML <math> tags to clean LaTeX and shields LaTeX expressions with zero leaked tokens', () => {
+  const htmlWithMath = `<!DOCTYPE html>
+<html lang="vi">
+<head><title>Toán học & Công thức</title></head>
+<body>
+  <article>
+    <h1>Toán học & Công thức $E = mc^2$</h1>
+    <p>Công thức mở đầu đoạn 1 (nằm trong excerpt): <math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow></math> và inline $x_1 + x_2 = y^*_n$ cần giữ nguyên.</p>
+    <p>Công thức LaTeX block: $$\\int_0^\\infty e^{-x_1^2} dx_1 = \\frac{\\sqrt{\\pi}}{2}$$</p>
+    <p>Công thức Wikipedia cồng kềnh:</p>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" class="mwe-math-element mwe-math-element-block" display="block" typeof="mw:Extension/math" about="#mwt4" id="mwCQ" data-mw="{&quot;name&quot;:&quot;math&quot;,&quot;attrs&quot;:{&quot;display&quot;:&quot;block&quot;},&quot;body&quot;:{&quot;extsrc&quot;:&quot;ax^2 + bx + c = 0\\\\,,&quot;}}"><mrow data-mjx-texclass="ORD"><mstyle displaystyle="true" scriptlevel="0"><mi>a</mi><msup><mi>x</mi><mrow data-mjx-texclass="ORD"><mn>2</mn></mrow></msup><mo stretchy="false">+</mo><mi>b</mi><mi>x</mi><mo stretchy="false">+</mo><mi>c</mi><mo stretchy="false">=</mo><mn>0</mn><mspace width="0.167em"></mspace><mo>,</mo></mstyle></mrow></math>
+    <p>Khối KaTeX trên web: <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>E</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">E_0 = m_0 c^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span>E0 = m0 c2</span></span></span></p>
+    <p>Bất đẳng thức chứa dấu nhỏ hơn sát chữ: $a<b$ và $x_1 < y_2$.</p>
+    <p>Môi trường LaTeX độc lập: \\begin{equation} f(x_1) = a_1 x_1^2 + b_1 \\end{equation}</p>
+  </article>
+</body>
+</html>`;
+
+  const result = convertHtmlToCleanMarkdown(
+    htmlWithMath,
+    DEFAULT_CONVERSION_OPTIONS,
+    jsdomParser
+  );
+
+  // 0. Zero leaked placeholder tokens anywhere in markdown or metadata
+  assert.equal(result.markdown.includes('MPMATHTOKEN'), false);
+  assert.equal((result.metadata.excerpt || '').includes('MPMATHTOKEN'), false);
+  assert.equal((result.metadata.title || '').includes('MPMATHTOKEN'), false);
+
+  // 1. Raw inline LaTeX is untouched (underscores and asterisks are NOT escaped)
+  assert.equal(result.markdown.includes('$x_1 + x_2 = y^*_n$'), true);
+
+  // 2. Raw block LaTeX is untouched
+  assert.equal(
+    result.markdown.includes('$$\\int_0^\\infty e^{-x_1^2} dx_1 = \\frac{\\sqrt{\\pi}}{2}$$'),
+    true
+  );
+
+  // 3. Pure MathML <math>...</math> is converted into clean LaTeX via mathml-to-latex
+  assert.equal(result.markdown.includes('$a^{2} + b^{2} = c^{2}$'), true);
+  assert.equal(result.markdown.includes('<math'), false);
+
+  // 4. Bloated Wikipedia <math data-mw="..."> block is converted into clean block LaTeX
+  assert.equal(result.markdown.includes('$$\nax^2 + bx + c = 0\\,,\n$$'), true);
+
+  // 5. KaTeX block extracts clean annotation LaTeX without duplicating .katex-html spans
+  assert.equal(result.markdown.includes('$E_0 = m_0 c^2$'), true);
+  assert.equal(result.markdown.includes('E0 = m0 c2'), false);
+
+  // 6. Angle brackets inside $a<b$ are protected from DOMParser <b> tag misinterpretation
+  assert.equal(result.markdown.includes('$a<b$'), true);
+  assert.equal(result.markdown.includes('$x_1 < y_2$'), true);
+
+  // 7. Standalone \begin{equation}...\end{equation} environment is preserved intact without underscore escaping
+  assert.equal(
+    result.markdown.includes('\\begin{equation} f(x_1) = a_1 x_1^2 + b_1 \\end{equation}'),
+    true
+  );
+});
+
+test('inline $...$ anti-false-positive rules reject shell paths, currency pairs, and prose currency spans while keeping real math', () => {
+  // Direct unit checks on isLikelyInlineLatex
+  assert.equal(isLikelyInlineLatex('x_1 + y_2 = z^2'), true);
+  assert.equal(isLikelyInlineLatex('a<b'), true);
+  assert.equal(isLikelyInlineLatex('2\\pi r'), true);
+  assert.equal(isLikelyInlineLatex('50, còn gói nâng cao có giá 100'), false);
+  assert.equal(isLikelyInlineLatex('19.99 cho tháng đầu và 49.99'), false);
+
+  const htmlWithFalsePositiveCandidates = `<!DOCTYPE html>
+<html lang="vi">
+<head><title>Kiểm tra Chống Dương tính Giả</title></head>
+<body>
+  <article>
+    <h1>Kiểm tra Chống Dương tính Giả</h1>
+    <p>Đường dẫn biến môi trường: $HOME/$USER/config_file và cặp tiền tệ $USD/$VND hoặc $10-$20.</p>
+    <p>Câu văn có 2 ký hiệu tiền tệ: Gói cơ bản có giá $50, còn gói_nâng_cao có giá 100$.</p>
+    <p>Trong khi đó công thức thật $x_1 + y_1 = z_1^2$ và $\\alpha_0 < \\beta_1$ vẫn được bảo vệ tuyệt đối.</p>
+  </article>
+</body>
+</html>`;
+
+  const result = convertHtmlToCleanMarkdown(
+    htmlWithFalsePositiveCandidates,
+    DEFAULT_CONVERSION_OPTIONS,
+    jsdomParser
+  );
+
+  // 1. No leaked tokens
+  assert.equal(result.markdown.includes('MPMATHTOKEN'), false);
+
+  // 2. $HOME/$USER/config_file is NOT treated as math, so Turndown escapes underscores in config_file normally
+  assert.equal(result.markdown.includes('$HOME/$USER/config\\_file'), true);
+
+  // 3. Currency span "$50, còn gói_nâng_cao có giá 100$" is NOT treated as math, so underscores in gói_nâng_cao are escaped by Turndown
+  assert.equal(
+    result.markdown.includes('Gói cơ bản có giá $50, còn gói\\_nâng\\_cao có giá 100$.'),
+    true
+  );
+
+  // 4. Genuine inline math in the same document has its underscores and < preserved unescaped
+  assert.equal(result.markdown.includes('$x_1 + y_1 = z_1^2$'), true);
+  assert.equal(result.markdown.includes('$\\alpha_0 < \\beta_1$'), true);
+});
+
+
 
